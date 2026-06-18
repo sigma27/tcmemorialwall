@@ -327,7 +327,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       emptyState.style.display = "none"; track.style.display = "flex";
       [...memorials, ...memorials].forEach(m => track.appendChild(makeCard(m)));
-      const dur = Math.max(40, memorials.length * 18);
+      const dur = Math.max(20, memorials.length * 8);
       track.style.animationDuration = dur + "s";
       console.log("✅ buildWall running", memorials);
 
