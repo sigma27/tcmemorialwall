@@ -131,7 +131,7 @@
       <div class="header-rule"></div>
       <div class="storage-badge">
         <span class="storage-dot"></span>
-        Tributes saved in your browser &mdash; persists across visits
+        Tributes shared live - updates across all devices
       </div>
     </header>
 
@@ -191,30 +191,33 @@
       { name: "Soror Evelyn M. Graves",    org: "zeta",  msg: "Our beloved Soror who dedicated her life to service above self. You walked in love every single day.", by: "Zeta Phi Beta Sorority" },
       { name: "Brother Marcus D. Webb",    org: "sigma", msg: "Brother Webb, you mentored so many young men. Your legacy of excellence lives on in every one of us.", by: "The Legacy Club" },
       { name: "Soror Gloria R. Simmons",  org: "zeta",  msg: "Gracious, strong, and full of laughter. Our beloved Soror Gloria touched every heart she met.", by: "Her Sisters Forever" },*/
-    ];
+   // ];
 
    // function loadMemorials() {
-      try { const s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s); } catch(e) {}
-      return null;
-    }
+   //   try { const s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s); } catch(e) {}
+   //   return null;
+    
    // function saveMemorials(list) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch(e) {}
-    }
+   //   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch(e) {}
+   // };
 
     let memorials = [];
 
 // ✅ Load from Firebase instead of localStorage
+//
+
+// ✅ Load from Firebase and feed into original wall
 window.addEventListener("DOMContentLoaded", () => {
   if (window.listenToMemorials) {
     window.listenToMemorials((data) => {
       memorials = data;
 
-      // ✅ THIS uses your ORIGINAL rendering below
-      buildWall();   // <-- we fix this name next if needed
+      console.log("🔥 Firebase data:", memorials); // <-- debug
+
+      buildWall(); // ✅ THIS is what was missing
     });
   }
 });
-
 
     const track = document.getElementById("scroll-track");
     const emptyState = document.getElementById("empty-state");
@@ -236,12 +239,12 @@ window.addEventListener("DOMContentLoaded", () => {
       nameEl.textContent = m.name;
 
       const badge = document.createElement("div");
-      badge.className = "card-org-badge " + (m.org === "sigma" ? "sigma" : "zeta");
-      badge.textContent = m.org === "sigma" ? "Phi Beta Sigma Fraternity" : "Zeta Phi Beta Sorority";
+      badge.className = "card-org-badge " + (m.orgamization === "sigma" ? "sigma" : "zeta");
+      badge.textContent = m.organization === "sigma" ? "Phi Beta Sigma Fraternity" : "Zeta Phi Beta Sorority";
 
       const msgEl = document.createElement("div");
       msgEl.className = "card-message";
-      msgEl.textContent = "“" + m.msg + "”";
+      msgEl.textContent = "“" + m.message + "”";
 
       overlay.appendChild(nameEl);
       overlay.appendChild(badge);
@@ -268,6 +271,8 @@ window.addEventListener("DOMContentLoaded", () => {
       [...memorials, ...memorials].forEach(m => track.appendChild(makeCard(m)));
       const dur = Math.max(40, memorials.length * 18);
       track.style.animationDuration = dur + "s";
+      console.log("✅ buildWall running", memorials);
+
     }
 
     function addMemorial() {
@@ -296,6 +301,119 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     buildWall();
+    window.addMemorial = async function () {
+  const name = document.getElementById("inp-name").value.trim();
+  const org = document.getElementById("inp-org").value;
+  const message = document.getElementById("inp-msg").value.trim();
+  const submitter = document.getElementById("inp-submitter").value.trim();
+
+  if (!name || !org || !message) {
+    alert("Please complete all required fields.");
+    return;
+  }
+
+  try {
+    await addDoc(memorialRef, {
+      name: name,
+      organization: org,
+      message: message,
+      submitter: submitter || "",
+      createdAt: new Date()
+    });
+
+    // ✅ clear fields
+    document.getElementById("inp-name").value = "";
+    document.getElementById("inp-org").value = "";
+    document.getElementById("inp-msg").value = "";
+    document.getElementById("inp-submitter").value = "";
+
+  } catch (e) {
+    console.error("Error saving:", e);
+  }
+};
+``
   </script>
+ window.addMemorial = async function () {
+  const name = document.getElementById("inp-name").value.trim();
+  const org = document.getElementById("inp-org").value;
+  const message = document.getElementById("inp-msg").value.trim();
+  const submitter = document.getElementById("inp-submitter").value.trim();
+
+  if (!name || !org || !message) {
+    alert("Please complete all required fields.");
+    return;
+  }
+
+  try {
+    await addDoc(memorialRef, {
+      name: name,
+      organization: org,
+      message: message,
+      submitter: submitter || "",
+      createdAt: new Date()
+    });
+
+    console.log("✅ Saved to Firebase");
+
+  } catch (e) {
+    console.error("Error saving:", e);
+  }
+};
+
+    // ✅ clear fields
+    document.getElementById("inp-name").value = "";
+    document.getElementById("inp-org").value = "";
+    document.getElementById("inp-msg").value = "";
+    document.getElementById("inp-submitter").value = "";
+
+  } catch (e) {
+    console.error("Error saving:", e);
+  }
+};
+  <script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ✅ YOUR config (from Firebase console)
+const firebaseConfig = {
+  apiKey: "AIzaSyAjpxZ3DXwKGzELnRbfMvM8Yk7ouSnMLBc",
+  authDomain: "memorial-wall-f29f1.firebaseapp.com",
+  projectId: "memorial-wall-f29f1",
+  storageBucket: "memorial-wall-f29f1.firebasestorage.app",
+  messagingSenderId: "234319682910",
+  appId: "1:234319682910:web:f1c2cee0f0bdc4233243cf"
+};
+
+// ✅ Initialize safely
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const memorialRef = collection(db, "memorialEntries");
+
+// ✅ make these accessible globally
+window.addDoc = addDoc;
+window.memorialRef = memorialRef;
+
+
+// ✅ THIS is your listener (missing right now)
+window.listenToMemorials = function(callback) {
+  const q = query(memorialRef, orderBy("createdAt", "desc"));
+
+  onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(data);
+  });
+};
+</script>
 </body>
 </html>
